@@ -1,5 +1,7 @@
 var username;
 var connected;
+var currentChatroom;
+var timeBetweenNextChatlogCheck = 2000;
 
 $("document").ready(function(){
 
@@ -8,7 +10,7 @@ $("document").ready(function(){
     initUser();
 
     if (connected) {
-      setInterval(displayChatlog, 2000);
+      setInterval(displayChatlog, timeBetweenNextChatlogCheck);
     }
 
     // HTML calls the "send" labeled function on click.
@@ -25,9 +27,13 @@ function initUser() {
   while (username === "") {
     username = prompt("Username cannot be empty");
   }
+  currentChatroom = "General"
+  joinRoom();
+}
 
+function joinRoom() {
   $.ajax({
-  url: "http://localhost:5000/user/setuser/",
+  url: "http://localhost:5000/rooms/" + currentChatroom + "/join/",
   type: "POST",
   contentType: "application/json",
   data: JSON.stringify({
@@ -40,7 +46,7 @@ function initUser() {
 
 function sendMessage(message) {
   $.ajax({
-  url: "http://localhost:5000/rooms/room/sendmessage/",
+  url: "http://localhost:5000/rooms/" + currentChatroom + "/sendmessage/",
   type: "POST",
   contentType: "application/json",
   data: JSON.stringify({
@@ -53,7 +59,7 @@ function sendMessage(message) {
 }
 
 function displayChatlog() {
-  $.get("http://localhost:5000/rooms/room/chatlog/", function(data, status){
+  $.get("http://localhost:5000/rooms/" + currentChatroom + "/chatlog/", function(data, status){
     console.log(data);
     console.log(status);
     var x = data.toString();
