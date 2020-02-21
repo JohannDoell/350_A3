@@ -13,4 +13,6 @@ Part 2
 * Make rooms
 * On join, put user into general room
 	- Therefore, use change room function in the set username function
-- Make it so every JSON -> Dict conversion uses the custom function
+* Make it so every JSON -> Dict conversion uses the custom function
+* Create commands
+- Create room joining functionality
