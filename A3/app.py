@@ -37,8 +37,14 @@ class Rooms:
 		print(command)
 		print(arguments)
 
-		if (command == "listrooms"):
+		if(command == "help"):
+			pass
+		elif (command == "listrooms"):
 			self.add_message_to_room(room, "COMMAND", self.get_rooms())
+		elif (command == "createroom"):
+			pass
+		elif (command == "joinroom"):
+			pass
 
 class Chatroom:
 	def __init__(self):
