@@ -8,20 +8,21 @@ class Rooms:
 		self.rooms = {}
 	
 	def get_room(self, name):
-		#print(self.rooms)
 		return self.rooms[name]
 	
 	def add_room(self, name, room):
-		#print(self.rooms)
 		self.rooms[name] = room
-		#print(self.rooms)
 		
 	def remove_room(self, name):
 		del self.rooms[name]
 
+	def add_message_to_room(self, room_name, username, message):
+		message_to_add = username + ": " + message
+		self.rooms[room_name].add_message(message_to_add)
+
 class Chatroom:
 	def __init__(self):
-		self.chatlog = ["Test1"]
+		self.chatlog = []
 	
 	def get_chatlog(self):
 		return self.chatlog
@@ -36,17 +37,19 @@ def receive_message(room):
     response = request.get_json()
     print(response)
     
-    json_as_str = json.dumps(response)
-    json_as_dict = json.loads(json_as_str)
+    json_as_dict = convert_json_to_dict(response)
     
-    message_to_append = json_as_dict["username"] + ": " + json_as_dict["message"]
-    chatlog.append(message_to_append)
+    rooms.add_message_to_room(room, json_as_dict["username"], json_as_dict["message"])
     
     return jsonify(response)
     
 @app.route('/rooms/<room>/join/', methods=["POST"])
 def set_user(room):
 	response = request.get_json()
+	json_as_dict = convert_json_to_dict(response)
+
+	rooms.add_message_to_room(room, "ADMIN", "User " + json_as_dict["username"] + " joined the channel.")
+
 	print(response)
 	return jsonify(response)
 
