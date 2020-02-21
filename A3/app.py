@@ -10,6 +10,12 @@ class Rooms:
 	def get_room(self, name):
 		return self.rooms[name]
 	
+	def get_rooms(self):
+		keys = ""
+		for key in self.rooms.keys():
+			keys += key + ", "
+		return keys
+
 	def add_room(self, name, room):
 		if (name not in self.rooms):
 			self.rooms[name] = room
@@ -26,6 +32,14 @@ class Rooms:
 		message_to_add = username + ": " + message
 		self.rooms[room_name].add_message(message_to_add)
 
+	def parse_command(self, room, command, arguments):
+		print(room)
+		print(command)
+		print(arguments)
+
+		if (command == "listrooms"):
+			self.add_message_to_room(room, "COMMAND", self.get_rooms())
+
 class Chatroom:
 	def __init__(self):
 		self.chatlog = []
@@ -35,7 +49,7 @@ class Chatroom:
 	
 	def add_message(self, message):
 		self.chatlog.append(message)
-
+	
 rooms = Rooms()
 
 @app.route('/rooms/<room>/sendmessage/', methods=["POST"])
@@ -45,10 +59,17 @@ def receive_message(room):
     
     json_as_dict = convert_json_to_dict(response)
     
-    if (json_as_dict["message"][0] == '/'):
-	    print("Command received.")
-
     rooms.add_message_to_room(room, json_as_dict["username"], json_as_dict["message"])
+
+	# Commands
+    if (json_as_dict["message"][0] == '/'):
+        print("Command received.")
+        command_to_give = str(json_as_dict["message"][1:])
+        print(command_to_give)
+        command_to_give = command_to_give.split()
+        rooms.parse_command(room, command_to_give[0], command_to_give[1:])
+    
+    
     
     return jsonify(response)
     
