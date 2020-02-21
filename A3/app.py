@@ -11,10 +11,16 @@ class Rooms:
 		return self.rooms[name]
 	
 	def add_room(self, name, room):
-		self.rooms[name] = room
+		if (name not in self.rooms):
+			self.rooms[name] = room
+		else:
+			print("Cannot have duplicate rooms")
 		
 	def remove_room(self, name):
-		del self.rooms[name]
+		if (name == "General"):
+			print("Cannot delete the general channel")
+		else:
+			del self.rooms[name]
 
 	def add_message_to_room(self, room_name, username, message):
 		message_to_add = username + ": " + message
@@ -39,6 +45,9 @@ def receive_message(room):
     
     json_as_dict = convert_json_to_dict(response)
     
+    if (json_as_dict["message"][0] == '/'):
+	    print("Command received.")
+
     rooms.add_message_to_room(room, json_as_dict["username"], json_as_dict["message"])
     
     return jsonify(response)
