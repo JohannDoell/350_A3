@@ -16,6 +16,10 @@ class Rooms:
 			keys += key + ", "
 		return keys
 
+	def create_room(self, name):
+		chatroom_to_add = Chatroom()
+		rooms.add_room(name, chatroom_to_add)
+
 	def add_room(self, name, room):
 		if (name not in self.rooms):
 			self.rooms[name] = room
@@ -33,16 +37,12 @@ class Rooms:
 		self.rooms[room_name].add_message(message_to_add)
 
 	def parse_command(self, room, command, arguments):
-		print(room)
-		print(command)
-		print(arguments)
-
 		if(command == "help"):
-			pass
+			self.add_message_to_room(room, "COMMAND", "help, listrooms, createroom (name), joinroom (name)")
 		elif (command == "listrooms"):
 			self.add_message_to_room(room, "COMMAND", self.get_rooms())
 		elif (command == "createroom"):
-			pass
+			self.create_room(arguments[0])
 		elif (command == "joinroom"):
 			pass
 
@@ -109,8 +109,6 @@ def convert_json_to_dict(json_to_convert):
 
 
 if __name__ == '__main__':
-	chatroom_to_add = Chatroom()
-    
-	rooms.add_room('General', chatroom_to_add)
+	rooms.create_room('General')
 
 	app.run(debug=True)		
