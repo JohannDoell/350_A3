@@ -33,8 +33,10 @@ class Rooms:
 			del self.rooms[name]
 
 	def add_message_to_room(self, room_name, username, message):
-		message_to_add = username + ": " + message
-		self.rooms[room_name].add_message(message_to_add)
+		self.rooms[room_name].add_message(username + ": " + message)
+
+	def get_chatlog_from_room(self, room_name):
+		return self.rooms[room_name].get_chatlog()
 
 	def parse_command(self, room, command, arguments):
 		if(command == "help"):
@@ -61,10 +63,8 @@ rooms = Rooms()
 @app.route('/rooms/<room>/sendmessage/', methods=["POST"])
 def receive_message(room):
     response = request.get_json()
-    print(response)
-    
+
     json_as_dict = convert_json_to_dict(response)
-    
     rooms.add_message_to_room(room, json_as_dict["username"], json_as_dict["message"])
 
 	# Commands
@@ -75,8 +75,7 @@ def receive_message(room):
         command_to_give = command_to_give.split()
         rooms.parse_command(room, command_to_give[0], command_to_give[1:])
     
-    
-    
+    print(response)
     return jsonify(response)
     
 @app.route('/rooms/<room>/join/', methods=["POST"])
@@ -91,10 +90,7 @@ def set_user(room):
 
 @app.route('/rooms/<room>/chatlog/', methods=["GET"])
 def get_chatlog(room):
-	room_name = room
-	room_to_get = rooms.get_room(room_name)
-	chatlog_to_return = room_to_get.get_chatlog()
-	return jsonify(chatlog_to_return)
+	return jsonify(rooms.get_chatlog_from_room(room))
 
 @app.after_request
 def add_headers(response):
@@ -111,4 +107,5 @@ def convert_json_to_dict(json_to_convert):
 if __name__ == '__main__':
 	rooms.create_room('General')
 
-	app.run(debug=True)		
+	app.run()
+	#app.run(debug=True)		
