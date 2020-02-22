@@ -59,10 +59,7 @@ function sendMessage(message) {
 }
 
 function displayChatlog() {
-
-  document.getElementById("channel title").innerHTML = currentChatroom + ":"
-
-  $.get("http://localhost:5000/rooms/" + currentChatroom + "/chatlog/", function(data, status){
+  $.get("http://localhost:5000/rooms/" + currentChatroom + "/chatlog/" + username + "/", function(data, status){
     console.log(data);
     console.log(status);
     var x = data.toString();
