@@ -6,6 +6,7 @@ app = Flask(__name__)
 class Rooms:	
 	def __init__(self):
 		self.rooms = {}
+		self.users = {}
 	
 	def get_room(self, name):
 		return self.rooms[name]
@@ -33,20 +34,36 @@ class Rooms:
 			del self.rooms[name]
 
 	def add_message_to_room(self, room_name, username, message):
-		self.rooms[room_name].add_message(username + ": " + message)
+		if (username != "ADMIN" and username != "COMMAND"):
+			self.rooms[self.users[username]].add_message(username + ": " + message)
+		else:
+			self.rooms[room_name].add_message(username + ": " + message)
 
-	def get_chatlog_from_room(self, room_name):
-		return self.rooms[room_name].get_chatlog()
+	def add_user(self, username):
+		self.change_user_room(username, "General")
 
-	def parse_command(self, room, command, arguments):
+	def change_user_room(self, username, room):
+		if (room in self.rooms):
+			self.users[username] = room
+			rooms.add_message_to_room(room, "ADMIN", "User " + username + " joined the channel: " + room)
+		else:
+			print("Room does not exist: " + room)
+
+	def get_chatlog_from_room(self, room_name, username):
+		return self.rooms[self.users[username]].get_chatlog()
+		#return self.rooms[room_name].get_chatlog()
+
+	def parse_command(self, command, arguments, username):
 		if(command == "help"):
-			self.add_message_to_room(room, "COMMAND", "help, listrooms, createroom (name), joinroom (name)")
+			self.add_message_to_room(self.users[username], "COMMAND", "help, listrooms, createroom (name), joinroom (name)")
 		elif (command == "listrooms"):
-			self.add_message_to_room(room, "COMMAND", self.get_rooms())
+			self.add_message_to_room(self.users[username], "COMMAND", self.get_rooms())
 		elif (command == "createroom"):
 			self.create_room(arguments[0])
 		elif (command == "joinroom"):
-			pass
+			self.change_user_room(username, arguments[0])
+		else:
+			self.add_message_to_room(self.users[username], "COMMAND", "Invalid command. Try /help")
 
 class Chatroom:
 	def __init__(self):
@@ -64,6 +81,8 @@ rooms = Rooms()
 def receive_message(room):
     response = request.get_json()
 
+    print(response)
+
     json_as_dict = convert_json_to_dict(response)
     rooms.add_message_to_room(room, json_as_dict["username"], json_as_dict["message"])
 
@@ -73,9 +92,9 @@ def receive_message(room):
         command_to_give = str(json_as_dict["message"][1:])
         print(command_to_give)
         command_to_give = command_to_give.split()
-        rooms.parse_command(room, command_to_give[0], command_to_give[1:])
+        rooms.parse_command(command_to_give[0], command_to_give[1:], json_as_dict["username"])
     
-    print(response)
+    
     return jsonify(response)
     
 @app.route('/rooms/<room>/join/', methods=["POST"])
@@ -83,14 +102,14 @@ def set_user(room):
 	response = request.get_json()
 	json_as_dict = convert_json_to_dict(response)
 
-	rooms.add_message_to_room(room, "ADMIN", "User " + json_as_dict["username"] + " joined the channel.")
+	rooms.add_user(json_as_dict["username"])
 
 	print(response)
 	return jsonify(response)
 
-@app.route('/rooms/<room>/chatlog/', methods=["GET"])
-def get_chatlog(room):
-	return jsonify(rooms.get_chatlog_from_room(room))
+@app.route('/rooms/<room>/chatlog/<username>/', methods=["GET"])
+def get_chatlog(room, username):
+	return jsonify(rooms.get_chatlog_from_room(room, username))
 
 @app.after_request
 def add_headers(response):
