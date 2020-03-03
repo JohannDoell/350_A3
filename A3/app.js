@@ -15,8 +15,7 @@ $("document").ready(function(){
 
     // HTML calls the "send" labeled function on click.
     $("#send").click(function(){
-        var message = $("#message").val();
-        sendMessage(message);
+        sendMessage();
     });
 
 });
@@ -44,7 +43,9 @@ function joinRoom() {
         });
 }
 
-function sendMessage(message) {
+function sendMessage() {
+  var message = $("#message").val();
+
   $.ajax({
   url: "http://localhost:5000/rooms/" + currentChatroom + "/sendmessage/",
   type: "POST",
