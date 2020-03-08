@@ -23,26 +23,47 @@ class SendButton extends React.Component {
     }
 }
 
+class LoginButton extends React.Component {
+    render() {
+        return (
+            <button className="loginbutton" onClick={this.props.onClick}>
+                Login
+            </button>
+        );
+    }
+}
+
+class RoomButton extends React.Component {
+    render() {
+        return (
+            <button className="roombutton">
+
+            </button>
+        );
+    }
+}
+
 class Chatbox extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             message: '',
-            chatlog: []
+            username: '',
+            chatlog: [],
+            rooms: []
         };
-        this.handleChange = this.handleChange.bind(this);
-        this.handleKeyPress = this.handleKeyPress.bind(this);
+        this.handleMessageChange = this.handleMessageChange.bind(this);
+        this.handleUsernameChange = this.handleUsernameChange.bind(this);
+        this.handleSendKeyPress = this.handleSendKeyPress.bind(this);
+        this.handleLoginKeyPress = this.handleLoginKeyPress.bind(this);
         this.initUser = this.initUser.bind(this);
-        this.displayChatlog = this.displayChatlog.bind(this);
+        this.getChatlog = this.getChatlog.bind(this);
     }
 
     // == Lifecycle ==
 
     componentDidMount() {
-        this.initUser();
-
         if (connected) {
-            setInterval(this.displayChatlog, timeBetweenNextChatlogCheck);
         }
     }
 
@@ -51,44 +72,73 @@ class Chatbox extends React.Component {
     renderSendButton() {
         return (
             <SendButton
-                onClick={() => this.handleClick()}
+                onClick={() => this.sendClick()}
+            />
+        );
+    }
+
+    renderLoginButton() {
+        return (
+            <LoginButton
+                onClick={() => this.loginClick()}
             />
         );
     }
 
     // == Handle ==
 
-    handleClick() {
+    sendClick() {
         this.sendMessage(this.state.message);
     }
 
-    handleKeyPress(event) {
+    loginClick() {
+        this.initUser(this.state.username);
+    }
+
+    handleSendKeyPress(event) {
         if (event.key === "Enter") {
             this.sendMessage(this.state.message);
         }
     }
+    
+    handleLoginKeyPress(event) {
+        if (event.key === "Enter") {
+            this.initUser(this.state.message);
+        }
+    }
 
-    handleChange(event) {
+    handleMessageChange(event) {
         this.setState({ message: event.target.value });
+    }
+
+    handleUsernameChange(event) {
+        this.setState({ username: event.target.value });
     }
 
     // == Functionality ==
 
     initUser() {
-        username = prompt("Please input a username:");
+        username = this.state.username;
 
-        while (username === "") {
-            username = prompt("Username cannot be empty");
+        console.log(username);
+
+        if (username === "") {
+            alert("Username cannot be empty");
+        } else {
+            this.joinRoom();
+            connected = true;
+            setInterval(this.getChatlog, timeBetweenNextChatlogCheck);
+            this.forceUpdate();
         }
-        this.joinRoom();
-        connected = true;
     }
 
-    // = Rest API =
+    // == Rest API ==
+
+    // = POST =
 
     joinRoom() {
         $.ajax({
-            url: "http://localhost:5000/chatroom/join/",
+            url: "http://localhost:5000/chatroom/register/",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -115,14 +165,31 @@ class Chatbox extends React.Component {
         });
     }
 
-    displayChatlog() {
+    sendCommand(command) {
+        // TODO
+
+        $.ajax({
+            url: "http://localhost:5000/chatroom/command/",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": username,
+                "command": command
+            })
+        }).done(function (data) {
+            console.log(data);
+        });
+
+    }
+
+    // = GET =
+
+    getChatlog() {
         fetch("http://localhost:5000/chatroom/chatlog/" + username + "/")
             .then(res => res.json())
             .then(
                 (result) => {
                     console.log(result);
-                    //var x = result.toString();
-                    //x = result.join("\n");
                     this.setState({ chatlog: result });
                 }
             )
@@ -131,27 +198,41 @@ class Chatbox extends React.Component {
     // == Render Self ==
 
     render() {
-        return (
-            <div className="chat-box">
-                <div className="chat-title">
-                    <p>Chatbox:</p>
-                </div>
+        if (connected) {
+            return (
+                <div className="chat-box">
+                    <div className="chat-title">
+                        <p>Chatbox:</p>
+                    </div>
+    
+                    <div className="chat-log">
+                        {
+                        this.state.chatlog.map(function(item, i){
+                            //console.log("Item: " + item);
+                            return <p key={i}>{item}</p>
+                        })
+                        }
+                    </div>
+    
+                    <div className="message-line">
+                        Message: <input type="text" value={this.state.message} onChange={this.handleMessageChange} onKeyPress={this.handleSendKeyPress}></input>
+                        {this.renderSendButton()}
+                    </div>
 
-                <div className="chat-log">
-                    {
-                    this.state.chatlog.map(function(item, i){
-                        //console.log("Item: " + item);
-                        return <p key={i}>{item}</p>
-                    })
-                    }
-                </div>
+                    <div className="room-list">
 
-                <div className="message-line">
-                    Message: <input type="text" value={this.state.message} onChange={this.handleChange} onKeyPress={this.handleKeyPress}></input>
-                    {this.renderSendButton()}
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        } else {
+            return (
+                <div className="not-connected">
+                    Username: <input type="text" value={this.state.username} onChange={this.handleUsernameChange} onKeyPress={this.handleLoginKeyPress}></input>
+                    {this.renderLoginButton()}
+                </div>
+            );
+        }
+
     }
 }
 

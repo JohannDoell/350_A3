@@ -97,6 +97,16 @@ rooms = Rooms()
 # === Routes ===
 
 # == Post ==
+    
+@app.route('/chatroom/register/', methods=["POST"])
+def register_user():
+	response = request.get_json()
+	json_as_dict = convert_json_to_dict(response)
+
+	rooms.add_user(json_as_dict["username"])
+
+	print(response)
+	return jsonify(response)
 
 @app.route('/chatroom/sendmessage/', methods=["POST"])
 def receive_message():
@@ -118,16 +128,14 @@ def receive_message():
     
     
     return jsonify(response)
-    
-@app.route('/chatroom/join/', methods=["POST"])
-def set_user():
+
+@app.route('/chatroom/command/', methods=["POST"])
+def receive_command():
 	response = request.get_json()
+	print(response)
+
 	json_as_dict = convert_json_to_dict(response)
 
-	rooms.add_user(json_as_dict["username"])
-
-	print(response)
-	return jsonify(response)
 
 # == Get ==
 
