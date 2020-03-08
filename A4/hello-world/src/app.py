@@ -21,6 +21,12 @@ class Rooms:
 			keys += key + ", "
 		return keys
 	
+	def get_rooms_as_list(self):
+		keys = []
+		for key in self.rooms.keys():
+			keys.append(key)
+		return keys
+	
 	def get_user_room(self, username):
 		return self.users[username]
 
@@ -142,6 +148,10 @@ def receive_command():
 @app.route('/chatroom/chatlog/<username>/', methods=["GET"])
 def get_chatlog(username):
 	return jsonify(rooms.get_chatlog_from_room(username))
+
+@app.route('/chatroom/rooms/', methods=["GET"])
+def get_rooms():
+	return jsonify(rooms.get_rooms_as_list())
 
 # == Flask Helpers ==
 

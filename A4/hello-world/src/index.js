@@ -36,8 +36,8 @@ class LoginButton extends React.Component {
 class RoomButton extends React.Component {
     render() {
         return (
-            <button className="roombutton">
-
+            <button className="roombutton" onClick={this.props.onClick}>
+            {this.props.text}
             </button>
         );
     }
@@ -54,17 +54,20 @@ class Chatbox extends React.Component {
         };
         this.handleMessageChange = this.handleMessageChange.bind(this);
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
+
+        this.roomClick = this.roomClick.bind(this);
+
         this.handleSendKeyPress = this.handleSendKeyPress.bind(this);
         this.handleLoginKeyPress = this.handleLoginKeyPress.bind(this);
+
         this.initUser = this.initUser.bind(this);
         this.getChatlog = this.getChatlog.bind(this);
+        this.getRooms = this.getRooms.bind(this);
     }
 
     // == Lifecycle ==
 
     componentDidMount() {
-        if (connected) {
-        }
     }
 
     // == Rendering ==
@@ -85,9 +88,14 @@ class Chatbox extends React.Component {
         );
     }
 
+    renderRoomButtons() {
+        // https://blog.cloudboost.io/for-loops-in-react-render-no-you-didnt-6c9f4aa73778
+    }
+
     // == Handle ==
 
     sendClick() {
+        this.setState({message: ''});
         this.sendMessage(this.state.message);
     }
 
@@ -95,8 +103,13 @@ class Chatbox extends React.Component {
         this.initUser(this.state.username);
     }
 
+    roomClick() {
+        alert("Click!")
+    }
+
     handleSendKeyPress(event) {
         if (event.key === "Enter") {
+            this.setState({message: ''});
             this.sendMessage(this.state.message);
         }
     }
@@ -125,9 +138,10 @@ class Chatbox extends React.Component {
         if (username === "") {
             alert("Username cannot be empty");
         } else {
-            this.joinRoom();
+            this.registerUser();
             connected = true;
             setInterval(this.getChatlog, timeBetweenNextChatlogCheck);
+            setInterval(this.getRooms, timeBetweenNextChatlogCheck);
             this.forceUpdate();
         }
     }
@@ -136,7 +150,7 @@ class Chatbox extends React.Component {
 
     // = POST =
 
-    joinRoom() {
+    registerUser() {
         $.ajax({
             url: "http://localhost:5000/chatroom/register/",
             type: "POST",
@@ -150,8 +164,6 @@ class Chatbox extends React.Component {
     }
 
     sendMessage(message) {
-        this.setState({message: ''});
-
         $.ajax({
             url: "http://localhost:5000/chatroom/sendmessage/",
             type: "POST",
@@ -195,6 +207,17 @@ class Chatbox extends React.Component {
             )
     }
 
+    getRooms() {
+        fetch("http://localhost:5000/chatroom/rooms/")
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log(result);
+                    this.setState({ rooms: result });
+                }
+            )
+    }
+
     // == Render Self ==
 
     render() {
@@ -220,8 +243,9 @@ class Chatbox extends React.Component {
                     </div>
 
                     <div className="room-list">
-
+                        <p>Rooms: </p>
                     </div>
+
                 </div>
             );
         } else {
@@ -237,8 +261,6 @@ class Chatbox extends React.Component {
 }
 
 // ========================================
-
-
 
 ReactDOM.render(
     <Chatbox />,
