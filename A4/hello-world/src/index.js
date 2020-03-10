@@ -49,16 +49,19 @@ class Chatbox extends React.Component {
         this.state = {
             message: '',
             username: '',
+            roomname: '',
             chatlog: [],
             rooms: []
         };
         this.handleMessageChange = this.handleMessageChange.bind(this);
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
+        this.handleRoomNameChange = this.handleRoomNameChange.bind(this);
 
         this.roomClick = this.roomClick.bind(this);
 
         this.handleSendKeyPress = this.handleSendKeyPress.bind(this);
         this.handleLoginKeyPress = this.handleLoginKeyPress.bind(this);
+        this.handleRoomNameKeyPress = this.handleRoomNameKeyPress.bind(this);
 
         this.initUser = this.initUser.bind(this);
         this.getChatlog = this.getChatlog.bind(this);
@@ -90,6 +93,17 @@ class Chatbox extends React.Component {
 
     renderRoomButtons() {
         // https://blog.cloudboost.io/for-loops-in-react-render-no-you-didnt-6c9f4aa73778
+
+        let buttons = [];
+
+        for (let i = 0; i < this.state.rooms.length; i++) {
+          buttons.push(<RoomButton
+              text={this.state.rooms[i]}
+              onClick={() => this.roomClick(i)}
+              index={i}
+          />);
+        }
+        return buttons;
     }
 
     // == Handle ==
@@ -103,21 +117,29 @@ class Chatbox extends React.Component {
         this.initUser(this.state.username);
     }
 
-    roomClick() {
-        alert("Click!")
+    roomClick(i) {
+        //alert(this.state.rooms[i]);
+        this.sendMessage("/room join " + this.state.rooms[i]);
     }
 
     handleSendKeyPress(event) {
         if (event.key === "Enter") {
-            this.setState({message: ''});
             this.sendMessage(this.state.message);
+            this.setState({message: ''});
         }
     }
-    
+
     handleLoginKeyPress(event) {
         if (event.key === "Enter") {
             this.initUser(this.state.message);
         }
+    }
+
+    handleRoomNameKeyPress(event) {
+      if (event.key === "Enter") {
+        this.sendMessage("/room create " + this.state.roomname);
+        this.setState({roomname: ''});
+      }
     }
 
     handleMessageChange(event) {
@@ -126,6 +148,10 @@ class Chatbox extends React.Component {
 
     handleUsernameChange(event) {
         this.setState({ username: event.target.value });
+    }
+
+    handleRoomNameChange(event) {
+      this.setState({ roomname: event.target.value });
     }
 
     // == Functionality ==
@@ -227,7 +253,7 @@ class Chatbox extends React.Component {
                     <div className="chat-title">
                         <p>Chatbox:</p>
                     </div>
-    
+
                     <div className="chat-log">
                         {
                         this.state.chatlog.map(function(item, i){
@@ -236,7 +262,7 @@ class Chatbox extends React.Component {
                         })
                         }
                     </div>
-    
+
                     <div className="message-line">
                         Message: <input type="text" value={this.state.message} onChange={this.handleMessageChange} onKeyPress={this.handleSendKeyPress}></input>
                         {this.renderSendButton()}
@@ -244,6 +270,14 @@ class Chatbox extends React.Component {
 
                     <div className="room-list">
                         <p>Rooms: </p>
+                        {this.renderRoomButtons()}
+                    </div>
+
+                    <div className="create-room-line">
+                        Room Name: <input type="text" value={this.state.roomname}
+                        onChange={this.handleRoomNameChange}
+                        onKeyPress={this.handleRoomNameKeyPress}>
+                        </input>
                     </div>
 
                 </div>
