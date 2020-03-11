@@ -83,6 +83,7 @@ class Rooms:
 				self.change_user_room(username, arguments[1])
 			elif (arguments[0] == "delete"):
 				# Delete the room.
+				pass
 			else:
 				self.add_message_to_room(self.users[username], "COMMAND", "Invalid command. Try /help")
 		elif (command == "clear"):

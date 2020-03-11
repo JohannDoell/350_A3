@@ -23,6 +23,16 @@ class SendButton extends React.Component {
     }
 }
 
+class CreateButton extends React.Component {
+    render() {
+        return (
+            <button className="createbutton" onClick={this.props.onClick}>
+                Create Room
+            </button>
+        );
+    }
+}
+
 class LoginButton extends React.Component {
     render() {
         return (
@@ -37,7 +47,17 @@ class RoomButton extends React.Component {
     render() {
         return (
             <button className="roombutton" onClick={this.props.onClick}>
-            {this.props.text}
+                {this.props.text}
+            </button>
+        );
+    }
+}
+
+class ShowRoomsButton extends React.Component {
+    render() {
+        return (
+            <button className="showroomsbutton" onClick={this.props.onClick}>
+                {this.props.text}
             </button>
         );
     }
@@ -47,6 +67,7 @@ class Chatbox extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            showchat: true,
             message: '',
             username: '',
             roomname: '',
@@ -58,6 +79,7 @@ class Chatbox extends React.Component {
         this.handleRoomNameChange = this.handleRoomNameChange.bind(this);
 
         this.roomClick = this.roomClick.bind(this);
+        this.showRoomsClick = this.showRoomsClick.bind(this);
 
         this.handleSendKeyPress = this.handleSendKeyPress.bind(this);
         this.handleLoginKeyPress = this.handleLoginKeyPress.bind(this);
@@ -83,6 +105,14 @@ class Chatbox extends React.Component {
         );
     }
 
+    renderCreateButton() {
+        return (
+            <CreateButton
+                onClick={() => this.createClick()}
+            />
+        );
+    }
+
     renderLoginButton() {
         return (
             <LoginButton
@@ -97,20 +127,34 @@ class Chatbox extends React.Component {
         let buttons = [];
 
         for (let i = 0; i < this.state.rooms.length; i++) {
-          buttons.push(<RoomButton
-              text={this.state.rooms[i]}
-              onClick={() => this.roomClick(i)}
-              index={i}
-          />);
+            buttons.push(<RoomButton
+                text={this.state.rooms[i]}
+                onClick={() => this.roomClick(i)}
+                index={i}
+            />);
         }
         return buttons;
+    }
+
+    renderShowRoomButton(_text) {
+        return (
+            <ShowRoomsButton
+                onClick={() => this.showRoomsClick()}
+                text={_text}
+            />
+        );
     }
 
     // == Handle ==
 
     sendClick() {
-        this.setState({message: ''});
         this.sendMessage(this.state.message);
+        this.setState({ message: '' });
+    }
+
+    createClick() {
+        this.sendMessage("/room create " + this.state.roomname);
+        this.setState({ roomname: '' });
     }
 
     loginClick() {
@@ -122,10 +166,19 @@ class Chatbox extends React.Component {
         this.sendMessage("/room join " + this.state.rooms[i]);
     }
 
+    showRoomsClick(i) {
+        if (this.state.showchat) {
+            this.setState({ showchat: false });
+        } else {
+            this.setState({ showchat: true });
+        }
+
+    }
+
     handleSendKeyPress(event) {
         if (event.key === "Enter") {
             this.sendMessage(this.state.message);
-            this.setState({message: ''});
+            this.setState({ message: '' });
         }
     }
 
@@ -136,10 +189,10 @@ class Chatbox extends React.Component {
     }
 
     handleRoomNameKeyPress(event) {
-      if (event.key === "Enter") {
-        this.sendMessage("/room create " + this.state.roomname);
-        this.setState({roomname: ''});
-      }
+        if (event.key === "Enter") {
+            this.sendMessage("/room create " + this.state.roomname);
+            this.setState({ roomname: '' });
+        }
     }
 
     handleMessageChange(event) {
@@ -151,7 +204,7 @@ class Chatbox extends React.Component {
     }
 
     handleRoomNameChange(event) {
-      this.setState({ roomname: event.target.value });
+        this.setState({ roomname: event.target.value });
     }
 
     // == Functionality ==
@@ -248,40 +301,63 @@ class Chatbox extends React.Component {
 
     render() {
         if (connected) {
-            return (
-                <div className="chat-box">
-                    <div className="chat-title">
-                        <p>Chatbox:</p>
-                    </div>
+            if (this.state.showchat) {
+                return (
+                    <div className="chat-box">
+                        <div className="chat-title">
+                            <p>Chatbox:</p>
+                        </div>
 
-                    <div className="chat-log">
-                        {
-                        this.state.chatlog.map(function(item, i){
-                            //console.log("Item: " + item);
-                            return <p key={i}>{item}</p>
-                        })
-                        }
-                    </div>
+                        <div className="chat-log">
+                            {
+                                this.state.chatlog.map(function (item, i) {
+                                    //console.log("Item: " + item);
+                                    return <p key={i}>{item}</p>
+                                })
+                            }
+                        </div>
 
-                    <div className="message-line">
-                        Message: <input type="text" value={this.state.message} onChange={this.handleMessageChange} onKeyPress={this.handleSendKeyPress}></input>
-                        {this.renderSendButton()}
-                    </div>
+                        <div className="message-line">
+                            Message: <input type="text" value={this.state.message} onChange={this.handleMessageChange} onKeyPress={this.handleSendKeyPress}></input>
+                            {this.renderSendButton()}
+                        </div>
 
+                        <p>______________________________________________</p>
+
+                        <div className="room-list">
+                            <p>Rooms: </p>
+                            {this.renderRoomButtons()}
+                        </div>
+
+                        <div className="create-room-line">
+                            Room Name: <input type="text" value={this.state.roomname}
+                                onChange={this.handleRoomNameChange}
+                                onKeyPress={this.handleRoomNameKeyPress}>
+                            </input>
+                            {this.renderCreateButton()}
+                        </div>
+
+                        <div className="show-room-button">
+                            {this.renderShowRoomButton("Show Rooms List")}
+                        </div>
+
+                    </div>
+                );
+            } else {
+                return (
                     <div className="room-list">
-                        <p>Rooms: </p>
-                        {this.renderRoomButtons()}
+                        <p>Active Rooms:</p>
+                        {
+                            this.state.rooms.map(function (item, i) {
+                                return <p key={i}>{item}</p>
+                            })
+                        }
+                        <div className="show-room-button">
+                            {this.renderShowRoomButton("Hide Rooms List")}
+                        </div>
                     </div>
-
-                    <div className="create-room-line">
-                        Room Name: <input type="text" value={this.state.roomname}
-                        onChange={this.handleRoomNameChange}
-                        onKeyPress={this.handleRoomNameKeyPress}>
-                        </input>
-                    </div>
-
-                </div>
-            );
+                );
+            }
         } else {
             return (
                 <div className="not-connected">
