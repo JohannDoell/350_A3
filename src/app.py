@@ -48,12 +48,12 @@ def receive_message():
     
     return jsonify(response)
 
-@app.route('/chatroom/command/', methods=["POST"])
-def receive_command():
-	response = request.get_json()
-	print(response)
-
-	json_as_dict = convert_json_to_dict(response)
+# @app.route('/chatroom/command/', methods=["POST"])
+# def receive_command():
+# 	response = request.get_json()
+# 	print(response)
+#
+# 	json_as_dict = convert_json_to_dict(response)
 
 
 # == Get ==
