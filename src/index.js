@@ -256,23 +256,6 @@ class Chatbox extends React.Component {
         });
     }
 
-    // sendCommand(command) {
-    //     // TODO
-
-    //     $.ajax({
-    //         url: "http://localhost:5000/chatroom/command/",
-    //         type: "POST",
-    //         contentType: "application/json",
-    //         data: JSON.stringify({
-    //             "username": username,
-    //             "command": command
-    //         })
-    //     }).done(function (data) {
-    //         console.log(data);
-    //     });
-
-    // }
-
     // = GET =
 
     getChatlog() {
