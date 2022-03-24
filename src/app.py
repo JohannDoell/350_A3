@@ -1,5 +1,9 @@
 import json
 from flask import Flask, request, jsonify
+from flask_spyne import Spyne
+from spyne.protocol.soap import Soap11
+from spyne.model.primitive import Unicode, Integer
+from spyne.model.complex import Iterable
 
 import rooms
 
@@ -14,7 +18,7 @@ chat = rooms.Rooms()
 # === Routes ===
 
 # == Post ==
-    
+
 @app.route('/chatroom/register/', methods=["POST"])
 def register_user():
 	response = request.get_json()
@@ -44,8 +48,8 @@ def receive_message():
     else:
         user_room = chat.get_user_room(json_as_dict["username"])
         chat.add_message_to_room(user_room, json_as_dict["username"], json_as_dict["message"])
-    
-    
+
+
     return jsonify(response)
 
 # @app.route('/chatroom/command/', methods=["POST"])
@@ -84,7 +88,6 @@ def convert_json_to_dict(json_to_convert):
 # === Main ===
 
 if __name__ == '__main__':
-	chat.create_room('General')
-
 	app.run()
-	#app.run(debug=True)		
+	# chat.create_room('General')
+	#app.run(debug=True)
