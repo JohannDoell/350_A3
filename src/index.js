@@ -11,6 +11,8 @@ var username;
 var connected;
 var timeBetweenNextChatlogCheck = 1000;
 
+var webServiceURL = 'http://localhost:8000/?wsdl'
+
 // ==== Classes ====
 
 class SendButton extends React.Component {
@@ -122,8 +124,6 @@ class Chatbox extends React.Component {
     }
 
     renderRoomButtons() {
-        // https://blog.cloudboost.io/for-loops-in-react-render-no-you-didnt-6c9f4aa73778
-
         let buttons = [];
 
         for (let i = 0; i < this.state.rooms.length; i++) {
@@ -230,27 +230,47 @@ class Chatbox extends React.Component {
     // = POST =
 
     registerUser() {
+
+        var soapMessage =
+            '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
+            '<soapenv:Header/>'+
+            '<soapenv:Body>'+
+                '<chat:register_user>'+
+                    '<chat:username>' + username + '</chat:username>'+
+                '</chat:register_user>'+
+            '</soapenv:Body>'+
+            '</soapenv:Envelope>'
+
         $.ajax({
-            url: "http://localhost:5000/chatroom/register/",
+            url: webServiceURL,
             type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-                "username": username,
-            })
+            dataType: "xml",
+            contentType: "text/plain",
+            data: soapMessage,
         }).done(function (data) {
             console.log(data);
         });
     }
 
     sendMessage(message) {
+
+        var soapMessage =
+        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
+        '<soapenv:Header/>'+
+        '<soapenv:Body>'+
+            '<chat:receive_message>'+
+                '<chat:username>' + username + '</chat:username>'+
+                '<chat:message>' + message + '</chat:message>'+
+            '</chat:receive_message>'+
+        '</soapenv:Body>'+
+        '</soapenv:Envelope>'
+
         $.ajax({
-            url: "http://localhost:5000/chatroom/sendmessage/",
+            url: webServiceURL,
             type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-                "username": username,
-                "message": message
-            })
+            dataType: "xml",
+            contentType: "text/plain",
+            data: soapMessage,
         }).done(function (data) {
             console.log(data);
         });
@@ -259,25 +279,79 @@ class Chatbox extends React.Component {
     // = GET =
 
     getChatlog() {
-        fetch("http://localhost:5000/chatroom/chatlog/" + username + "/")
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    console.log(result);
-                    this.setState({ chatlog: result });
-                }
-            )
+
+        var soapMessage =
+        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
+        '<soapenv:Header/>'+
+        '<soapenv:Body>'+
+            '<chat:get_chatlog>'+
+               '<chat:username>' + username + '</chat:username>'+
+            '</chat:get_chatlog>'+
+        '</soapenv:Body>'+
+        '</soapenv:Envelope>'
+
+        $.ajax({
+            url: webServiceURL,
+            type: "POST",
+            dataType: "xml",
+            contentType: "text/plain",
+            data: soapMessage,
+            complete: (data) => {
+                // console.log(data);
+                var processedData = JSON.parse(Object.values(data)[16]);
+                // console.log(processedData);
+                // console.log(processedData);
+                this.setState({ chatlog: processedData });
+            }
+        });
+
+        // fetch("http://localhost:5000/chatroom/chatlog/" + username + "/")
+        //     .then(res => res.json())
+        //     .then(
+        //         (result) => {
+        //             console.log(result);
+        //             this.setState({ chatlog: result });
+        //         }
+        //     )
     }
 
     getRooms() {
-        fetch("http://localhost:5000/chatroom/rooms/")
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    console.log(result);
-                    this.setState({ rooms: result });
-                }
-            )
+
+        var soapMessage =
+        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
+        '<soapenv:Header/>'+
+        '<soapenv:Body>'+
+            '<chat:get_rooms/>'+
+        '</soapenv:Body>'+
+        '</soapenv:Envelope>'
+
+        // console.log("Get room initiated.")
+
+        $.ajax({
+            url: webServiceURL,
+            type: "POST",
+            dataType: "xml",
+            contentType: "text/plain",
+            data: soapMessage,
+            complete: (data) => {
+                // console.log(data);
+                var processedData = JSON.parse(Object.values(data)[16]);
+                // console.log(processedData);
+                // console.log(processedData);
+                this.setState({ rooms: processedData });
+            }
+        });
+
+        // console.log("Get room ended.")
+
+        // fetch("http://localhost:5000/chatroom/rooms/")
+        //     .then(res => res.json())
+        //     .then(
+        //         (result) => {
+        //             console.log(result);
+        //             this.setState({ rooms: result });
+        //         }
+        //     )
     }
 
     // == Render Self ==
