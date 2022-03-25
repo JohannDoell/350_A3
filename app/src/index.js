@@ -12,6 +12,7 @@ var connected;
 var timeBetweenNextChatlogCheck = 1000;
 
 var webServiceURL = 'http://localhost:8000/?wsdl'
+// var webServiceURL = 'http://172.17.0.2:8000/?wsdl'
 
 // ==== Classes ====
 
@@ -290,6 +291,7 @@ class Chatbox extends React.Component {
         '</soapenv:Body>'+
         '</soapenv:Envelope>'
 
+        // Send Ajax JQuery Request and process the received JSON
         $.ajax({
             url: webServiceURL,
             type: "POST",
@@ -304,15 +306,6 @@ class Chatbox extends React.Component {
                 this.setState({ chatlog: processedData });
             }
         });
-
-        // fetch("http://localhost:5000/chatroom/chatlog/" + username + "/")
-        //     .then(res => res.json())
-        //     .then(
-        //         (result) => {
-        //             console.log(result);
-        //             this.setState({ chatlog: result });
-        //         }
-        //     )
     }
 
     getRooms() {
@@ -327,6 +320,7 @@ class Chatbox extends React.Component {
 
         // console.log("Get room initiated.")
 
+        // Send Ajax JQuery Request and process the received JSON
         $.ajax({
             url: webServiceURL,
             type: "POST",
@@ -341,22 +335,12 @@ class Chatbox extends React.Component {
                 this.setState({ rooms: processedData });
             }
         });
-
-        // console.log("Get room ended.")
-
-        // fetch("http://localhost:5000/chatroom/rooms/")
-        //     .then(res => res.json())
-        //     .then(
-        //         (result) => {
-        //             console.log(result);
-        //             this.setState({ rooms: result });
-        //         }
-        //     )
     }
 
     // == Render Self ==
 
     render() {
+        // If connected, render out the chatbox and associated features.
         if (connected) {
             if (this.state.showchat) {
                 return (
@@ -416,6 +400,7 @@ class Chatbox extends React.Component {
                 );
             }
         } else {
+            // If not yet connected, display the not yet connected info.
             return (
                 <div className="not-connected">
                     Username: <input type="text" value={this.state.username} onChange={this.handleUsernameChange} onKeyPress={this.handleLoginKeyPress}></input>

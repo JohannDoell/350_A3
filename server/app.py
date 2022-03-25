@@ -6,16 +6,11 @@ from spyne.server.wsgi import WsgiApplication
 
 import rooms
 
-# === Classes ===
-
 # === Global Variables ===
 
 chat = rooms.Rooms()
 
-
-# === Routes ===
-
-# == Post ==
+# === Classes ===
 
 class CorsService(ServiceBase):
     origin = '*'
@@ -30,7 +25,14 @@ CorsService.event_manager.add_listener('method_return_object',
                                        _on_method_return_object)
 
 
+
+# === "Routes" ===
+
 class ChatroomService(CorsService):
+
+    # == Post ==
+
+    # Register User
     @rpc(Unicode, _returns=Unicode)
     def register_user(self, username):
         response = "Server received: " + username
@@ -40,6 +42,7 @@ class ChatroomService(CorsService):
 
         yield response
 
+    # Parse message
     @rpc(Unicode, Unicode, _returns=Unicode)
     def receive_message(self, username, message):
         response = "Server received: " + username + " " + message
@@ -59,33 +62,17 @@ class ChatroomService(CorsService):
 
     # == Get ==
 
+    # Get chatlog
     @rpc(Unicode, _returns=AnyDict)
     def get_chatlog(self, username):
         print("Received get request for log for user: " + username)
         return chat.get_chatlog_from_room(username)
 
+    # Get roomlist
     @rpc(_returns=AnyDict)
     def get_rooms(self):
         print("Received get request for rooms")
         return chat.get_rooms_as_list()
-
-
-# == Flask Helpers ==
-
-# @app.after_request
-# def add_headers(response):
-#     response.headers.add('Access-Control-Allow-Origin', '*')
-#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-#     return response
-
-
-# === Utility ===
-
-# def convert_json_to_dict(json_to_convert):
-#     json_as_str = json.dumps(json_to_convert)
-#     json_as_dict = json.loads(json_as_str)
-#     return json_as_dict
-
 
 # === Main ===
 
@@ -99,10 +86,17 @@ if __name__ == '__main__':
     import logging
     from wsgiref.simple_server import make_server
 
+    # ip_address = '127.0.0.1'
+    ip_address = '0.0.0.0'
+    # ip_address = 'host.docker.internal'
+    port_to_bind = 8000
+
+    # Spyne console log.
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
-    logging.info("listening to http://127.0.0.1:8000")
+    logging.info("listening to http://" + ip_address +":" + str(port_to_bind))
     logging.info("wsdl is at: http://localhost:8000/?wsdl")
 
-    server = make_server('127.0.0.1', 8000, wsgi_application)
+    server = make_server(ip_address, 8000, wsgi_application)
+    # server = make_server('172.17.0.2', 8000, wsgi_application)
     server.serve_forever()

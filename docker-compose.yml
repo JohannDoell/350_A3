@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+ server:
+  build: ./server
+  container_name: spyne_python_server
+  ports:
+   - "8000:8000"
+  volumes:
+   - C:/Users/Johan/node/436/python:/code
+  stdin_open: true
+  tty: true
+ client:
+  build: ./app
+  container_name: react_app_client
+  ports:
+   - "3000:3000"
+  volumes:
+   - C:/Users/Johan/node/436/javascript:/code
+  stdin_open: true
+  tty: true
