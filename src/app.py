@@ -1,13 +1,9 @@
 import json
-from flask import Flask, request, jsonify
-from flask_spyne import Spyne
+from spyne import Application, rpc, ServiceBase, Iterable, Integer, Unicode
 from spyne.protocol.soap import Soap11
-from spyne.model.primitive import Unicode, Integer
-from spyne.model.complex import Iterable
+from spyne.server.wsgi import WsgiApplication
 
 import rooms
-
-app = Flask(__name__)
 
 # === Classes ===
 
@@ -15,75 +11,84 @@ app = Flask(__name__)
 
 chat = rooms.Rooms()
 
-
 # === Routes ===
 
 # == Post ==
 
-@app.route('/chatroom/register/', methods=["POST"])
-def register_user():
-    response = request.get_json()
-    json_as_dict = convert_json_to_dict(response)
 
-    chat.add_user(json_as_dict["username"])
+class ChatroomService(ServiceBase):
+    @rpc(Unicode, _returns=Unicode)
+    def register_user(self, username):
+        response = "Server received: " + username
+        print(response)
 
-    print(response)
-    return jsonify(response)
+        chat.add_user(username)
 
+        yield response
 
-@app.route('/chatroom/sendmessage/', methods=["POST"])
-def receive_message():
-    response = request.get_json()
+    @rpc(Unicode, Unicode, _returns=Unicode)
+    def receive_message(self, username, message):
+        # Commands
+        if message[0] == '/':
+            print("Command received.")
+            command_to_give = str(message[1:])
+            print(command_to_give)
+            command_to_give = command_to_give.split()
+            chat.parse_command(command_to_give[0], command_to_give[1:], username)
+        else:
+            user_room = chat.get_user_room(username)
+            chat.add_message_to_room(user_room, username, message)
 
-    print(response)
+        response = "Server received: " + username + " " + message
+        print(response)
+        yield response
 
-    json_as_dict = convert_json_to_dict(response)
+    # == Get ==
 
-    # Commands
-    if (json_as_dict["message"][0] == '/'):
-        print("Command received.")
-        command_to_give = str(json_as_dict["message"][1:])
-        print(command_to_give)
-        command_to_give = command_to_give.split()
-        chat.parse_command(command_to_give[0], command_to_give[1:], json_as_dict["username"])
-    else:
-        user_room = chat.get_user_room(json_as_dict["username"])
-        chat.add_message_to_room(user_room, json_as_dict["username"], json_as_dict["message"])
+    @rpc(Unicode, _returns=Iterable(Unicode))
+    def get_chatlog(self, username):
+        yield chat.get_chatlog_from_room(username)
 
-    return jsonify(response)
-
-# == Get ==
-
-@app.route('/chatroom/chatlog/<username>/', methods=["GET"])
-def get_chatlog(username):
-    return jsonify(chat.get_chatlog_from_room(username))
-
-
-@app.route('/chatroom/rooms/', methods=["GET"])
-def get_rooms():
-    return jsonify(chat.get_rooms_as_list())
+    @rpc(_returns=Iterable(Unicode))
+    def get_rooms(self):
+        yield chat.get_rooms_as_list()
 
 
 # == Flask Helpers ==
 
-@app.after_request
-def add_headers(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    return response
+# @app.after_request
+# def add_headers(response):
+#     response.headers.add('Access-Control-Allow-Origin', '*')
+#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+#     return response
 
 
 # === Utility ===
 
-def convert_json_to_dict(json_to_convert):
-    json_as_str = json.dumps(json_to_convert)
-    json_as_dict = json.loads(json_as_str)
-    return json_as_dict
+# def convert_json_to_dict(json_to_convert):
+#     json_as_str = json.dumps(json_to_convert)
+#     json_as_dict = json.loads(json_as_str)
+#     return json_as_dict
 
 
 # === Main ===
 
+application = Application([ChatroomService], 'chatroom',
+                          in_protocol=Soap11(validator='lxml'),
+                          out_protocol=Soap11())
+
+wsgi_application = WsgiApplication(application)
+
 if __name__ == '__main__':
-    app.run()
-    # chat.create_room('General')
-    # app.run(debug=True)
+    import logging
+
+    from wsgiref.simple_server import make_server
+
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
+
+    logging.info("listening to http://127.0.0.1:8000")
+    logging.info("wsdl is at: http://localhost:8000/?wsdl")
+
+    server = make_server('127.0.0.1', 8000, wsgi_application)
+    server.serve_forever()
