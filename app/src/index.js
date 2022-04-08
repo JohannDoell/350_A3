@@ -11,7 +11,7 @@ var username;
 var connected;
 var timeBetweenNextChatlogCheck = 1000;
 
-var webServiceURL = 'http://localhost:8000/?wsdl'
+var serverURL = 'http://localhost:8000'
 // var webServiceURL = 'http://172.17.0.2:8000/?wsdl'
 
 // ==== Classes ====
@@ -231,47 +231,27 @@ class Chatbox extends React.Component {
     // = POST =
 
     registerUser() {
-
-        var soapMessage =
-            '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
-            '<soapenv:Header/>'+
-            '<soapenv:Body>'+
-                '<chat:register_user>'+
-                    '<chat:username>' + username + '</chat:username>'+
-                '</chat:register_user>'+
-            '</soapenv:Body>'+
-            '</soapenv:Envelope>'
-
         $.ajax({
-            url: webServiceURL,
+            url: serverURL + "/chatroom/register/",
             type: "POST",
-            dataType: "xml",
-            contentType: "text/plain",
-            data: soapMessage,
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": username,
+            })
         }).done(function (data) {
             console.log(data);
         });
     }
 
     sendMessage(message) {
-
-        var soapMessage =
-        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
-        '<soapenv:Header/>'+
-        '<soapenv:Body>'+
-            '<chat:receive_message>'+
-                '<chat:username>' + username + '</chat:username>'+
-                '<chat:message>' + message + '</chat:message>'+
-            '</chat:receive_message>'+
-        '</soapenv:Body>'+
-        '</soapenv:Envelope>'
-
         $.ajax({
-            url: webServiceURL,
+            url: serverURL + "/chatroom/sendmessage/",
             type: "POST",
-            dataType: "xml",
-            contentType: "text/plain",
-            data: soapMessage,
+            contentType: "application/json",
+            data: JSON.stringify({
+                "username": username,
+                "message": message
+            })
         }).done(function (data) {
             console.log(data);
         });
@@ -280,61 +260,25 @@ class Chatbox extends React.Component {
     // = GET =
 
     getChatlog() {
-
-        var soapMessage =
-        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
-        '<soapenv:Header/>'+
-        '<soapenv:Body>'+
-            '<chat:get_chatlog>'+
-               '<chat:username>' + username + '</chat:username>'+
-            '</chat:get_chatlog>'+
-        '</soapenv:Body>'+
-        '</soapenv:Envelope>'
-
-        // Send Ajax JQuery Request and process the received JSON
-        $.ajax({
-            url: webServiceURL,
-            type: "POST",
-            dataType: "xml",
-            contentType: "text/plain",
-            data: soapMessage,
-            complete: (data) => {
-                // console.log(data);
-                var processedData = JSON.parse(Object.values(data)[16]);
-                // console.log(processedData);
-                // console.log(processedData);
-                this.setState({ chatlog: processedData });
-            }
-        });
+        fetch(serverURL + "/chatroom/chatlog/" + username + "/")
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log(result);
+                    this.setState({ chatlog: result });
+                }
+            )
     }
 
     getRooms() {
-
-        var soapMessage =
-        '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:chat="chatroom">'+
-        '<soapenv:Header/>'+
-        '<soapenv:Body>'+
-            '<chat:get_rooms/>'+
-        '</soapenv:Body>'+
-        '</soapenv:Envelope>'
-
-        // console.log("Get room initiated.")
-
-        // Send Ajax JQuery Request and process the received JSON
-        $.ajax({
-            url: webServiceURL,
-            type: "POST",
-            dataType: "xml",
-            contentType: "text/plain",
-            data: soapMessage,
-            complete: (data) => {
-                // console.log(data);
-                var processedData = JSON.parse(Object.values(data)[16]);
-                // console.log(processedData);
-                // console.log(processedData);
-                this.setState({ rooms: processedData });
-            }
-        });
+        fetch(serverURL + "/chatroom/rooms/")
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log(result);
+                    this.setState({ rooms: result });
+                }
+            )
     }
 
     // == Render Self ==

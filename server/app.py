@@ -1,102 +1,90 @@
 import json
-from spyne import Application, rpc, ServiceBase, Iterable, Integer, Unicode, AnyDict
-from spyne.protocol.json import JsonDocument
-from spyne.protocol.soap import Soap11
-from spyne.server.wsgi import WsgiApplication
+from flask import Flask, request, jsonify
 
 import rooms
+
+app = Flask(__name__)
+
+# === Classes ===
 
 # === Global Variables ===
 
 chat = rooms.Rooms()
 
-# === Classes ===
+# === Routes ===
 
-class CorsService(ServiceBase):
-    origin = '*'
+# == Post ==
+    
+@app.route('/chatroom/register/', methods=["POST"])
+def register_user():
+	response = request.get_json()
+	json_as_dict = convert_json_to_dict(response)
+
+	chat.add_user(json_as_dict["username"])
+
+	print(response)
+	return jsonify(response)
+
+@app.route('/chatroom/sendmessage/', methods=["POST"])
+def receive_message():
+    response = request.get_json()
+
+    print(response)
+
+    json_as_dict = convert_json_to_dict(response)
 
 
-def _on_method_return_object(ctx):
-    ctx.transport.resp_headers['Access-Control-Allow-Origin'] = \
-        ctx.descriptor.service_class.origin
+	# Commands
+    if (json_as_dict["message"][0] == '/'):
+        print("Command received.")
+        command_to_give = str(json_as_dict["message"][1:])
+        print(command_to_give)
+        command_to_give = command_to_give.split()
+        chat.parse_command(command_to_give[0], command_to_give[1:], json_as_dict["username"])
+    else:
+        user_room = chat.get_user_room(json_as_dict["username"])
+        chat.add_message_to_room(user_room, json_as_dict["username"], json_as_dict["message"])
+    
+    
+    return jsonify(response)
+
+# @app.route('/chatroom/command/', methods=["POST"])
+# def receive_command():
+# 	response = request.get_json()
+# 	print(response)
+#
+# 	json_as_dict = convert_json_to_dict(response)
 
 
-CorsService.event_manager.add_listener('method_return_object',
-                                       _on_method_return_object)
+# == Get ==
 
+@app.route('/chatroom/chatlog/<username>/', methods=["GET"])
+def get_chatlog(username):
+	return jsonify(chat.get_chatlog_from_room(username))
 
+@app.route('/chatroom/rooms/', methods=["GET"])
+def get_rooms():
+	return jsonify(chat.get_rooms_as_list())
 
-# === "Routes" ===
+# == Flask Helpers ==
 
-class ChatroomService(CorsService):
+@app.after_request
+def add_headers(response):
+	response.headers.add('Access-Control-Allow-Origin', '*')
+	response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+	return response
 
-    # == Post ==
+# === Utility ===
 
-    # Register User
-    @rpc(Unicode, _returns=Unicode)
-    def register_user(self, username):
-        response = "Server received: " + username
-        print(response)
-
-        chat.add_user(username)
-
-        yield response
-
-    # Parse message
-    @rpc(Unicode, Unicode, _returns=Unicode)
-    def receive_message(self, username, message):
-        response = "Server received: " + username + " " + message
-        print(response)
-
-        # Commands
-        if message[0] == '/':
-            print("Command received.")
-            command_to_give = str(message[1:])
-            print(command_to_give)
-            command_to_give = command_to_give.split()
-            chat.parse_command(command_to_give[0], command_to_give[1:], username)
-        else:
-            user_room = chat.get_user_room(username)
-            chat.add_message_to_room(user_room, username, message)
-        yield response
-
-    # == Get ==
-
-    # Get chatlog
-    @rpc(Unicode, _returns=AnyDict)
-    def get_chatlog(self, username):
-        print("Received get request for log for user: " + username)
-        return chat.get_chatlog_from_room(username)
-
-    # Get roomlist
-    @rpc(_returns=AnyDict)
-    def get_rooms(self):
-        print("Received get request for rooms")
-        return chat.get_rooms_as_list()
+def convert_json_to_dict(json_to_convert):
+	json_as_str = json.dumps(json_to_convert)
+	json_as_dict = json.loads(json_as_str)
+	return json_as_dict
 
 # === Main ===
 
-application = Application([ChatroomService], 'chatroom',
-                          in_protocol=Soap11(validator='lxml'),
-                          out_protocol=JsonDocument())
-
-wsgi_application = WsgiApplication(application)
-
 if __name__ == '__main__':
-    import logging
-    from wsgiref.simple_server import make_server
+	chat.create_room('General')
 
-    # ip_address = '127.0.0.1'
-    ip_address = '0.0.0.0'
-    # ip_address = 'host.docker.internal'
-    port_to_bind = 8000
-
-    # Spyne console log.
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
-    logging.info("listening to http://" + ip_address +":" + str(port_to_bind))
-    logging.info("wsdl is at: http://localhost:8000/?wsdl")
-
-    server = make_server(ip_address, 8000, wsgi_application)
-    # server = make_server('172.17.0.2', 8000, wsgi_application)
-    server.serve_forever()
+	# app.run()
+	app.run(host='0.0.0.0', port='8000', debug=True)		

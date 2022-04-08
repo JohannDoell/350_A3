@@ -2,7 +2,7 @@ version: "3.9"
 services:
  server:
   build: ./server
-  container_name: spyne_python_server
+  container_name: flask_python_server
   ports:
    - "8000:8000"
   volumes:
